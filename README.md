@@ -31,4 +31,4 @@ Build via docker build
 
 ## Issues
 
-Feel free to let me know if you encounter any issues
+Feel free to let me know if you encounter any issues.
