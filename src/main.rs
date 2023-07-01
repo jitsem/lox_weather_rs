@@ -8,6 +8,14 @@ use std::time::SystemTime;
 
 use serde::Deserialize;
 
+use chrono::format::strftime::StrftimeItems;
+use chrono::{DateTime, Local, NaiveTime, TimeZone, Utc};
+
+use std::fmt::Write;
+
+const CITY_NAME: &str = "Brussels";
+const COUNTRY_NAME: &str = "Belgium";
+const LOX_LICENSE_EXP_DATE: &str = "2024-06-30";
 const TEST_DATA_CSV: &str = r#"<mb_metadata>
 id;name;longitude;latitude;height (m.asl.);country;timezone;utc-timedifference;sunrise;sunset;local date;weekday;local time;temperature(C);feeledTemperature(C);windspeed(km/h);winddirection(degr);wind gust(km/h);low clouds(%);medium clouds(%);high clouds(%);precipitation(mm);probability of Precip(%);snowFraction;sea level pressure(hPa);relative humidity(%);CAPE;picto-code;radiation (W/m2);
 </mb_metadata><valid_until>2024-06-30</valid_until>
@@ -66,6 +74,47 @@ impl Default for AppState {
             weather_response: CachedResponse::default(),
         }
     }
+}
+
+#[derive(Debug)]
+struct WeatherReport {
+    longitude: f64,
+    latitude: f64,
+    utc_offset: i64,
+    daily: DailyData,
+    hourly: HourlyData,
+}
+
+#[derive(Debug)]
+struct DailyData {
+    sundata: SunData,
+}
+
+#[derive(Debug)]
+struct SunData {
+    sunrise_time: DateTime<Utc>,
+    sunset_time: DateTime<Utc>,
+}
+
+#[derive(Debug)]
+struct HourlyData {
+    data: Vec<HourlyDetails>,
+}
+
+#[derive(Debug)]
+struct HourlyDetails {
+    time: DateTime<Utc>,
+    temperature: f64,
+    apparent_temperature: f64,
+    wind_speed: f64,
+    wind_bearing: f64,
+    wind_gust: f64,
+    cloud_cover: f64,
+    precip_intensity: f64,
+    precip_probability: f64,
+    pressure: f64,
+    humidity: f64,
+    uv_index: f64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -145,5 +194,146 @@ async fn get_weather_from_provider(lat: &str, long: &str) -> String {
         Ok(val) => println!("{key}: {val:?}"),
         Err(e) => println!("couldn't interpret {key}: {e}"),
     }
+
+    let asl = 8;
+    let weather_report = generate_test_report();
+    let mut csv = String::new();
+    csv += "<mb_metadata>\n";
+    csv += "id;name;longitude;latitude;height (m.asl.);country;timezone;utc-timedifference;sunrise;sunset;\n";
+    csv += "local date;weekday;local time;temperature(C);feeledTemperature(C);windspeed(km/h);winddirection(degr);wind gust(km/h);low clouds(%);medium clouds(%);high clouds(%);precipitation(mm);probability of Precip(%);snowFraction;sea level pressure(hPa);relative humidity(%);CAPE;picto-code;radiation (W/m2);\n";
+    csv += "</mb_metadata><valid_until>";
+    csv += LOX_LICENSE_EXP_DATE;
+    csv += "</valid_until>\n";
+    csv += "<station>\n";
+
+    let (lon, ew) = if weather_report.longitude < 0.0 {
+        (-weather_report.longitude, 'W')
+    } else {
+        (weather_report.longitude, 'E')
+    };
+    let (lat, ns) = if weather_report.latitude < 0.0 {
+        (-weather_report.latitude, 'S')
+    } else {
+        (weather_report.latitude, 'N')
+    };
+
+    let sunrise_time = weather_report
+        .daily
+        .sundata
+        .sunrise_time
+        .format("%H:%M")
+        .to_string();
+    let sunset_time = weather_report
+        .daily
+        .sundata
+        .sunset_time
+        .format("%H:%M")
+        .to_string();
+
+    csv += &format!(
+        ";{};{:.2}°{};{:.2}°{};{};{};CEST;UTC{:+.1};{};{};\n",
+        CITY_NAME,
+        lon,
+        ew,
+        lat,
+        ns,
+        asl,
+        COUNTRY_NAME,
+        weather_report.utc_offset,
+        sunrise_time,
+        sunset_time
+    );
+    for hourly in &weather_report.hourly.data {
+        let icon_id = 1; //TODO get actual icon
+
+        write!(&mut csv, "{};{:5.1};{:5.1};{:3.0};{:3.0};{:3.0};{:3.0};{:3.0};{:3.0};{:5.1};{:3.0};{:3.1};{:4.0};{:3.0};{};{};{};\n",
+    hourly.time.format("%d.%m.%Y;%a;%H").to_string(),
+    hourly.temperature,
+    hourly.apparent_temperature,
+    hourly.wind_speed,
+    hourly.wind_bearing,
+    hourly.wind_gust,
+    0.0,
+    hourly.cloud_cover * 100.0,
+    0.0,
+    hourly.precip_intensity,
+    hourly.precip_probability * 100.0,
+    0.0,
+    hourly.pressure,
+    hourly.humidity * 100.0,
+    0,
+    icon_id,
+    (hourly.uv_index * 100.0) as i64).unwrap();
+
+        // csv += &format!("{:%d.%m.%Y;%a;%H};", hourly.time);
+        // csv += &format!("{:.1};", hourly.temperature);
+        // csv += &format!("{:.1};", hourly.apparent_temperature);
+        // csv += &format!("{:.0};", hourly.wind_speed);
+        // csv += &format!("{:.0};", hourly.wind_bearing);
+        // csv += &format!("{:.0};", hourly.wind_gust);
+        // csv += &format!("{:.0};", 0.0);
+        // csv += &format!("{:.0};", hourly.cloud_cover * 100.0);
+        // csv += &format!("{:.0};", 0.0);
+        // csv += &format!("{:.1};", hourly.precip_intensity);
+        // csv += &format!("{:.0};", hourly.precip_probability);
+        // csv += &format!("{:.1};", 0.0);
+        // csv += &format!("{:.0};", hourly.pressure);
+        // csv += &format!("{:.0};", hourly.humidity * 100.0);
+        // csv += &format!("{:6};", 0);
+        // csv += &format!("{};", icon_id);
+        // csv += &format!("{:.0};\n", hourly.uv_index * 100.0);
+    }
+
+    csv += "</station>\n";
+
+    print!("{csv}");
     TEST_DATA_CSV.to_owned()
+}
+
+fn generate_test_report() -> WeatherReport {
+    let mut raw_data = Vec::new();
+
+    for hour in 8..24 {
+        raw_data.push((
+            2023, 7, 1, hour, 25.0, 27.0, 5.0, 180.0, 7.0, 0.45, 0.2, 5.0, 1012.0, 0.35, 0.0,
+        ));
+    }
+
+    for hour in 0..8 {
+        raw_data.push((
+            2023, 7, 2, hour, 25.0, 27.0, 5.0, 180.0, 7.0, 0.45, 0.2, 5.0, 1012.0, 0.35, 0.0,
+        ));
+    }
+
+    let hourly_data: Vec<HourlyDetails> = raw_data
+        .iter()
+        .map(|data| HourlyDetails {
+            time: Utc.ymd(data.0, data.1, data.2).and_hms(data.3, 0, 0),
+            temperature: data.4,
+            apparent_temperature: data.5,
+            wind_speed: data.6,
+            wind_bearing: data.7,
+            wind_gust: data.8,
+            cloud_cover: data.9,
+            precip_intensity: data.10,
+            precip_probability: data.11,
+            pressure: data.12,
+            humidity: data.13,
+            uv_index: data.14,
+        })
+        .collect();
+
+    let weather_report = WeatherReport {
+        longitude: 40.0122,
+        latitude: 65.002,
+        utc_offset: 2,
+        daily: DailyData {
+            sundata: SunData {
+                sunrise_time: Utc.with_ymd_and_hms(2023, 7, 1, 6, 0, 0).unwrap(),
+                sunset_time: Utc.with_ymd_and_hms(2023, 7, 1, 22, 0, 0).unwrap(),
+            },
+        },
+        hourly: HourlyData { data: Vec::new() },
+    };
+    weather_report
 }
