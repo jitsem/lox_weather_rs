@@ -199,8 +199,7 @@ async fn get_weather_from_provider(lat: &str, long: &str) -> String {
     let weather_report = generate_test_report();
     let mut csv = String::new();
     csv += "<mb_metadata>\n";
-    csv += "id;name;longitude;latitude;height (m.asl.);country;timezone;utc-timedifference;sunrise;sunset;\n";
-    csv += "local date;weekday;local time;temperature(C);feeledTemperature(C);windspeed(km/h);winddirection(degr);wind gust(km/h);low clouds(%);medium clouds(%);high clouds(%);precipitation(mm);probability of Precip(%);snowFraction;sea level pressure(hPa);relative humidity(%);CAPE;picto-code;radiation (W/m2);\n";
+    csv += "id;name;longitude;latitude;height (m.asl.);country;timezone;utc-timedifference;sunrise;sunset;local date;weekday;local time;temperature(C);feeledTemperature(C);windspeed(km/h);winddirection(degr);wind gust(km/h);low clouds(%);medium clouds(%);high clouds(%);precipitation(mm);probability of Precip(%);snowFraction;sea level pressure(hPa);relative humidity(%);CAPE;picto-code;radiation (W/m2);\n";
     csv += "</mb_metadata><valid_until>";
     csv += LOX_LICENSE_EXP_DATE;
     csv += "</valid_until>\n";
@@ -246,7 +245,7 @@ async fn get_weather_from_provider(lat: &str, long: &str) -> String {
     for hourly in &weather_report.hourly.data {
         let icon_id = 1; //TODO get actual icon
 
-        write!(&mut csv, "{};{:5.1};{:5.1};{:3.0};{:3.0};{:3.0};{:3.0};{:3.0};{:3.0};{:5.1};{:3.0};{:3.1};{:4.0};{:3.0};{};{};{};\n",
+        write!(&mut csv, "{};{:5.1};{:5.1};{:3.0};{:3.0};{:3.0};{:3.0};{:3.0};{:3.0};{:5.1};{:3.0};{:3.1};{:4.0};{:3.0};{:6};{};{:4.0};\n",
     hourly.time.format("%d.%m.%Y;%a;%H").to_string(),
     hourly.temperature,
     hourly.apparent_temperature,
@@ -265,29 +264,10 @@ async fn get_weather_from_provider(lat: &str, long: &str) -> String {
     icon_id,
     (hourly.uv_index * 100.0) as i64).unwrap();
 
-        // csv += &format!("{:%d.%m.%Y;%a;%H};", hourly.time);
-        // csv += &format!("{:.1};", hourly.temperature);
-        // csv += &format!("{:.1};", hourly.apparent_temperature);
-        // csv += &format!("{:.0};", hourly.wind_speed);
-        // csv += &format!("{:.0};", hourly.wind_bearing);
-        // csv += &format!("{:.0};", hourly.wind_gust);
-        // csv += &format!("{:.0};", 0.0);
-        // csv += &format!("{:.0};", hourly.cloud_cover * 100.0);
-        // csv += &format!("{:.0};", 0.0);
-        // csv += &format!("{:.1};", hourly.precip_intensity);
-        // csv += &format!("{:.0};", hourly.precip_probability);
-        // csv += &format!("{:.1};", 0.0);
-        // csv += &format!("{:.0};", hourly.pressure);
-        // csv += &format!("{:.0};", hourly.humidity * 100.0);
-        // csv += &format!("{:6};", 0);
-        // csv += &format!("{};", icon_id);
-        // csv += &format!("{:.0};\n", hourly.uv_index * 100.0);
     }
 
     csv += "</station>\n";
-
-    print!("{csv}");
-    TEST_DATA_CSV.to_owned()
+    csv
 }
 
 fn generate_test_report() -> WeatherReport {
@@ -324,8 +304,8 @@ fn generate_test_report() -> WeatherReport {
         .collect();
 
     let weather_report = WeatherReport {
-        longitude: 40.0122,
-        latitude: 65.002,
+        longitude: 15.0122,
+        latitude: 68.002,
         utc_offset: 2,
         daily: DailyData {
             sundata: SunData {
@@ -333,7 +313,7 @@ fn generate_test_report() -> WeatherReport {
                 sunset_time: Utc.with_ymd_and_hms(2023, 7, 1, 22, 0, 0).unwrap(),
             },
         },
-        hourly: HourlyData { data: Vec::new() },
+        hourly: HourlyData { data: hourly_data},
     };
     weather_report
 }
