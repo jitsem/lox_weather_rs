@@ -76,10 +76,10 @@ async fn forecast_handler(
             res
         }
         Err(e) => {
-            eprintln!("Failed to create a valid response: {}", e);
+            eprintln!("Failed to create a valid response: {e}");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Something went wrong: {}", e),
+                format!("Something went wrong: {e}"),
             )
                 .into_response()
         }
@@ -158,10 +158,10 @@ async fn current_temp_handler(
             res
         }
         Err(e) => {
-            eprintln!("Failed to create a valid response: {}", e);
+            eprintln!("Failed to create a valid response: {e}");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Something went wrong: {}", e),
+                format!("Something went wrong: {e}"),
             )
                 .into_response()
         }

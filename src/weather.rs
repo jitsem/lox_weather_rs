@@ -191,7 +191,7 @@ async fn get_response_from_provider(
 
     match weather_report {
         Ok(x) => Ok(x),
-        Err(e) => Err(format!("Something went wrong parsing json: {}", e).into()),
+        Err(e) => Err(format!("Something went wrong parsing json: {e}").into()),
     }
 }
 
