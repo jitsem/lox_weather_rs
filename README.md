@@ -6,9 +6,9 @@ This is a weather server implementation using PirateWeather API for loxone writt
 This is purely for educational/debugging purposes. Don't use this to replace the actual loxone weather service
 
 > [!WARNING]
-> This is not really usable anymore in it's current form as a replacement for the loxone weather service. Since Loxone 16 the validity of the SSL cert for weather.loxone.com is check by the miniserver, which means the DNS trick below does not work anymore. Unless future updates allows importing custom CA's in the miniserver, it will never work like this anymore :(
+> This is not really usable anymore in it's current form as a replacement for the loxone weather service. Since Loxone 16 the validity of the SSL cert for weather.loxone.com is checked by the miniserver, which means the DNS trick below does not work anymore. Unless future updates allows importing custom CA's in the miniserver, it will never work like this anymore :(
 >
-> I added a new endpoint on /forecast/current/temp/, with the same query params that will just return the current outside temperature for use in the loxone (via the virtual inputs system).
+> I added a new endpoint on /current/temp/, with the same query params that will just return the current outside temperature for use in the loxone (via the virtual inputs system).
 
 ## Build
 
