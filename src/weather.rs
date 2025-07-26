@@ -20,6 +20,13 @@ struct WeatherReport {
     offset: f64,
     hourly: HourlySummary,
     daily: DailySummary,
+    currently: Currently,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct Currently {
+    temperature: f64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -155,6 +162,13 @@ pub async fn create_weather_xml(
 
     csv += "</station>\n";
     Ok(csv)
+}
+
+pub async fn get_current_temp(
+    query: DataCreationOptions,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let weather_report = get_response_from_provider(query.latitude, query.longitude).await?;
+    Ok(weather_report.currently.temperature.to_string())
 }
 
 async fn get_response_from_provider(
