@@ -1,8 +1,8 @@
-FROM rust:1.61.0 as builder
+FROM rust:1.88.0 as builder
 WORKDIR /usr/src/lox_weather_rs
 COPY . .
 RUN cargo install --path .
-FROM debian:bullseye
+FROM debian:trixie
 RUN apt-get update \
     && apt-get install -y ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
